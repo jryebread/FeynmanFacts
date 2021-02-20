@@ -1,9 +1,14 @@
 .title {
     text-align: center
 }
-
+.hidden { display: none; }
 .mew-form{
     width: 50%;
+    margin: 0 auto;
+}
+
+.mews {
+    width: 80%;
     margin: 0 auto;
 }
 
