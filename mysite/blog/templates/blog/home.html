@@ -1,0 +1,128 @@
+
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <div class ="content-section">
+        <form method="POST">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">New Fact</legend>
+                {{ form | crispy }} 
+            </fieldset>
+            <div class ="form-group">
+                <button class ="btn btn-outline-info" type="submit">Create</button>
+            </div>
+        </form>
+    </div>
+
+
+  <div class = "infinite-container">
+    {% for post in posts %}
+      <article class="infinite-item media content-section ">
+      {% if user not in post.liked.all %}
+      <span id="voting{{post.id}}" class="vote" >
+          {% if user != post.author %}
+          <svg id="like" name="post_id{{post.id}}" value="{{ post.id }}" width="36" height="36">
+            <path d="M2 26h32L18 10 2 26z" fill="currentColor"></path>
+          </svg>
+          {% endif %}
+          <h2 class="like-count{{post.id}}"> {{post.num_likes}} </h2>
+          
+
+      </span>
+      {% else %}
+          {% if user != post.author %}
+          <span id="voting{{post.id}}" class="vote already" >
+          <svg id="like" name="post_id{{post.id}}" value="{{ post.id }}" width="36" height="36">
+             <path d="M2 26h32L18 10 2 26z" fill ="currentColor" ></path>
+          </svg>
+          {% endif %}
+
+          <h2 class="like-count{{post.id}}"> {{post.num_likes}} </h2>
+          </span>
+      {% endif %}
+      
+        <img class = "rounded-circle article-img" src ="{{ post.author.profile.image.url }}">
+          <div class="media-body">
+            <div class="article-metadata">
+              <a class="mr-2" href="{% url 'user-posts' post.author.username %}">{{ post.author }}</a>
+              <small class="text-muted">{{ post.date_posted }}</small>
+            </div>
+            <h2><a class="article-title" href="{% url 'post-detail' post.id %}">{{ post.title }}</a></h2>
+            <p class="article-content">{{ post.content }}</p>
+          </div>
+      </article>
+    {% endfor %}
+  </div>
+
+  
+
+  {% if page_obj.has_next %}
+    <a class="infinite-more-link" href="?page={{ page_obj.next_page_number }}">More</a>
+  {% endif %}
+  
+  <div class="d-flex d-none position-fixed " style="top:35vh;left:46vw">
+    <button id="hide" class="btn btn-primary loading hidden">
+      <span class="spinner-border spinner-border-sm"></span>
+      Loading..
+    </button>
+  </div>
+
+<script> 
+      $(document).ready(function(event){
+                $(document).on('click', '#like', function(event){
+                    event.preventDefault();
+                    var pk = $(this).attr('value');
+                    console.log(pk)
+
+                    let res;
+                    const likes = $(`.like-count${pk}`).text()
+                    const likeCount = parseInt(likes)
+                    console.log(likeCount + 1)
+                    //add code that updates the like counter inc/dec
+                    var url_mask = "{% url 'like_post' 123 %}".replace(/123/, pk.toString());
+                    console.log(url_mask)
+                    $.ajax({
+                      type: 'POST',
+                      url: url_mask,
+                      data: {
+                           'csrfmiddlewaretoken': '{{ csrf_token }}',
+                           'postid': pk
+                      },
+                      success: function(response) {
+                        console.log("YAY!", response);
+                      },
+                      error: function(response) {
+                        console.log('error', response)
+                      }
+                                            
+                    })
+                });
+            });
+        </script>
+
+
+  <script>
+    $(function(){
+    $("#hide").hide();
+    });
+    var infinite = new Waypoint.Infinite({
+      
+      element: $('.infinite-container')[0],
+      offset: 'bottom-in-view',
+      onBeforePageLoad: function() {
+        console.log('before pageLoad ajax');
+        doButtonStuff();
+        $('.loading').show();
+      },
+      onAfterPageLoad: function($items) {
+        console.log('after pageLoad ajax');
+        doButtonStuff();
+
+        $('.loading').hide();
+      }
+    });
+  </script>
+
+{% endblock content %}
